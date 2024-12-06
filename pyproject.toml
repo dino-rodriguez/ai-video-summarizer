@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.7",
     "mlx-whisper>=0.4.1",
+    "openai>=1.57.0",
+    "python-dotenv>=1.0.1",
+    "tqdm>=4.67.1",
     "yt-dlp>=2024.12.3",
 ]
 
