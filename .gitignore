@@ -11,6 +11,4 @@ wheels/
 
 # Other
 .env
-downloads/
-transcripts/
-summaries/
+generated/
