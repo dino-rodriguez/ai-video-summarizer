@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from lib.audio_tools import summarize_transcript, transcribe_audio
+from lib.video_tools import extract_key_frames, save_frames
 from lib.yt import download_audio, download_video
 
 
@@ -27,16 +28,12 @@ def main(
     DOWNLOADS_FOLDER = "generated/downloads"
     TRANSCRIPTS_FOLDER = "generated/transcripts"
     SUMMARIES_FOLDER = "generated/summaries"
+    FRAMES_FOLDER = "generated/frames"
 
     if url is not None:
         print(f"Downloading video and audio from URL: {url}")
         video_path = download_video(url, DOWNLOADS_FOLDER)
         audio_path = download_audio(url, DOWNLOADS_FOLDER)
-
-    if video_path is not None:
-        print(video_path)
-        if not video_path.endswith(".mp4"):
-            raise Exception("Video file must be mp4")
 
     if audio_path is not None:
         if not audio_path.endswith(".m4a"):
@@ -58,6 +55,17 @@ def main(
         summaries_path = os.path.join(SUMMARIES_FOLDER, summaries_filename)
         os.makedirs(SUMMARIES_FOLDER, exist_ok=True)
         summarize_transcript(open_ai_client, transcript_path, summaries_path)
+
+    if video_path is not None:
+        if not video_path.endswith(".mp4"):
+            raise Exception("Video file must be mp4")
+
+        print(f"Extracting key frames from video: {video_path}")
+        key_frames = extract_key_frames(video_path)
+        frames_dirname = video_path.split("/")[-1].rstrip(".video.mp4")
+        frames_path = os.path.join(FRAMES_FOLDER, frames_dirname)
+        save_frames(key_frames, frames_path)
+        print(f"Saved {len(key_frames)} frames to {frames_path}")
 
 
 if __name__ == "__main__":

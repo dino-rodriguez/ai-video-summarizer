@@ -10,5 +10,6 @@ wheels/
 .venv
 
 # Other
+.DS_Store
 .env
 generated/
