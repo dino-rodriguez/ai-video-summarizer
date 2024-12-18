@@ -4,21 +4,20 @@ import click
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from lib.audio_tools import summarize_transcript, transcribe_audio
-from lib.video_tools import extract_key_frames, save_frames
-from lib.yt import download_audio, download_video
+from lib.audio_tools import generate_markdown, summarize_transcript, transcribe_audio
+from lib.yt import download_audio
 
 
 @click.option("--url", type=str, required=False)
-@click.option("--video-path", type=str, required=False)
 @click.option("--audio-path", type=str, required=False)
 @click.option("--transcript-path", type=str, required=False)
+@click.option("--summaries-path", type=str, required=False)
 @click.command()
 def main(
     url: str | None,
-    video_path: str | None,
     audio_path: str | None,
     transcript_path: str | None,
+    summaries_path: str | None,
 ):
     """Command line tool to generate lecture notes from YouTube video"""
 
@@ -28,11 +27,10 @@ def main(
     DOWNLOADS_FOLDER = "generated/downloads"
     TRANSCRIPTS_FOLDER = "generated/transcripts"
     SUMMARIES_FOLDER = "generated/summaries"
-    FRAMES_FOLDER = "generated/frames"
+    NOTES_FOLDER = "generated/notes"
 
     if url is not None:
-        print(f"Downloading video and audio from URL: {url}")
-        video_path = download_video(url, DOWNLOADS_FOLDER)
+        print(f"Downloading audio from URL: {url}")
         audio_path = download_audio(url, DOWNLOADS_FOLDER)
 
     if audio_path is not None:
@@ -56,16 +54,11 @@ def main(
         os.makedirs(SUMMARIES_FOLDER, exist_ok=True)
         summarize_transcript(open_ai_client, transcript_path, summaries_path)
 
-    if video_path is not None:
-        if not video_path.endswith(".mp4"):
-            raise Exception("Video file must be mp4")
-
-        print(f"Extracting key frames from video: {video_path}")
-        key_frames = extract_key_frames(video_path)
-        frames_dirname = video_path.split("/")[-1].rstrip(".video.mp4")
-        frames_path = os.path.join(FRAMES_FOLDER, frames_dirname)
-        save_frames(key_frames, frames_path)
-        print(f"Saved {len(key_frames)} frames to {frames_path}")
+    if summaries_path is not None:
+        notes_filename = summaries_path.split("/")[-1].rstrip(".txt") + ".md"
+        notes_path = os.path.join(NOTES_FOLDER, notes_filename)
+        os.makedirs(NOTES_FOLDER, exist_ok=True)
+        generate_markdown(summaries_path, notes_path)
 
 
 if __name__ == "__main__":

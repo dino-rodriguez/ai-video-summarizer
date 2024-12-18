@@ -1,5 +1,6 @@
 import json
 from dataclasses import asdict, dataclass
+from datetime import timedelta
 
 import mlx_whisper
 from openai import OpenAI
@@ -51,6 +52,38 @@ def transcribe_audio(audio_filepath: str, output_path: str):
 
     with open(output_path, "w") as f:
         json.dump(result, f, indent=2)
+
+
+def generate_markdown(summaries_filepath: str, output_path: str):
+    """Generate markdown for summaries"""
+
+    with open(summaries_filepath, "r") as f:
+        raw_summaries = json.load(f)
+        summaries: list[SummaryChunk] = []
+        for summary in raw_summaries:
+            summaries.append(SummaryChunk(**summary))
+
+    markdown = "# Lecture Notes\n\n"
+
+    # Iterate through each chunk and format it
+    for idx, chunk in enumerate(summaries, start=1):
+        start_time = _format_seconds(chunk.start_time)
+        end_time = _format_seconds(chunk.end_time)
+
+        # Add a section for each chunk
+        markdown += (
+            f"## Section {idx}\n"
+            f"**Start Time:** {start_time}\n"
+            f"**End Time:** {end_time}\n\n"
+            "### Summary\n"
+            f"{chunk.summary_chunk}\n\n"
+            "### Transcript\n"
+            f"{chunk.transcript_chunk}\n"
+            "---\n\n"
+        )
+
+    with open(output_path, "w") as f:
+        f.write(markdown)
 
 
 def _chunk_transcript(transcript_filepath: str):
@@ -121,6 +154,16 @@ def _chunk_transcript(transcript_filepath: str):
         )
 
     return chunks
+
+
+def _format_seconds(seconds: float):
+    """Outputs in hh:mm:ss format"""
+
+    td = timedelta(seconds=seconds)
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{hours:02}:{minutes:02}:{secs:02}"
 
 
 def _summarize_chunk(llm: OpenAI, chunk: Chunk):
